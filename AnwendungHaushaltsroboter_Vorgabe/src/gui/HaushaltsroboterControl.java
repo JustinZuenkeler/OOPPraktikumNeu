@@ -29,8 +29,11 @@ public class HaushaltsroboterControl {
 	  	  	   			"Der Haushaltsroboter wurde gelesen!");
     		}
     		else {
-    			this.hausView.zeigeInformationsfensterAn(
-    	   				"Noch nicht implementiert!");
+//    			this.hausView.zeigeInformationsfensterAn(
+//    	   				"Noch nicht implementiert!");
+    			this.hausModel.leseAusDatei(typ);
+	      		this.hausView.zeigeInformationsfensterAn(
+	  	  	   			"Der Haushaltsroboter wurde gelesen Txt!");
     		}
 		}
 		catch(IOException exc){
