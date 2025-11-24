@@ -1,4 +1,4 @@
-package gui;
+package gui.guiHaushaltsroboter;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -15,7 +15,8 @@ public class HaushaltsroboterControl {
 	private HaushaltsroboterModel hausModel;
 	
 	public HaushaltsroboterControl(Stage primaryStage){
-		this.hausModel = new HaushaltsroboterModel();
+		//this.hausModel = new HaushaltsroboterModel();
+		this.hausModel = hausModel.getInstance();
 		this.hausView = new HaushaltsroboterView(this, primaryStage,
 		 hausModel);
 	}

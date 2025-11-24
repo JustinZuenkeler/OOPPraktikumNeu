@@ -5,9 +5,29 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import fileCreatorsZuenkeler.*;
+import java.util.Vector;
 
-public class HaushaltsroboterModel {
+import fileCreatorsZuenkeler.*;
+import ownUtil.Observable;
+import ownUtil.Observer;
+
+public class HaushaltsroboterModel implements Observable {
+	
+	private Vector<Observer> observers = new Vector<Observer>();
+	
+	private static HaushaltsroboterModel haushaltsroboterModel;
+	
+	private HaushaltsroboterModel() {
+	}
+	
+	public static HaushaltsroboterModel getInstance() {
+		if(haushaltsroboterModel == null)
+		{
+		haushaltsroboterModel = new HaushaltsroboterModel();
+		}
+		
+		return haushaltsroboterModel;
+	}
 	
     public Haushaltsroboter haushaltsroboter;
     
@@ -36,6 +56,7 @@ public class HaushaltsroboterModel {
       				zeile[3], 
       				zeile[4].split("_"));
 		reader.schliesseDatei();
+		notifyObservers();
     }
 //    
 //    public void leseAusDateiCsv(String typ) throws IOException{
@@ -68,9 +89,29 @@ public class HaushaltsroboterModel {
 				= new BufferedWriter(new FileWriter("HaushaltsroboterAusgabe.csv", true));
 			aus.write(haushaltsroboter.gibHaushaltsroboterZurueck(';'));
 			aus.close();
+		
+	}
 
+	@Override
+	public void addObserver(Observer obs) {
+		this.observers.addElement(obs);		
+	}
+
+	@Override
+	public void removeObserver(Observer obs) {
+		this.observers.removeElement(obs);		
+	}
+
+	@Override
+	public void notifyObservers() {
+		for(int i = 0; i < this.observers.size(); i++){
+			this.observers.elementAt(i).update();
+			}
+		
 	}
 	
 	
 
 }
+
+

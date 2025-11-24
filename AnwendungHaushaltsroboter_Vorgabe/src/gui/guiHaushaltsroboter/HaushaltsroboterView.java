@@ -1,24 +1,33 @@
-package gui;
-   
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
+package gui.guiHaushaltsroboter;
+
 import java.io.IOException;
 
 import business.Haushaltsroboter;
-import javafx.event.*;
+import business.HaushaltsroboterModel;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import ownUtil.*;
+import ownUtil.MeldungsfensterAnzeiger;
+import ownUtil.Observer;
 
-public class HaushaltsroboterAnwendungssystem {
-	  
-    //---Anfang Attribute der grafischen Oberflaeche---
+public class HaushaltsroboterView implements Observer{
+	
+	private HaushaltsroboterControl hausControl;
+	private HaushaltsroboterModel hausModel;
+	
+	 //---Anfang Attribute der grafischen Oberflaeche---
     private Pane pane     					= new  Pane();
     private Label lblEingabe    	 		= new Label("Eingabe");
     private Label lblAnzeige   	 	    	= new Label("Anzeige");
@@ -27,11 +36,11 @@ public class HaushaltsroboterAnwendungssystem {
     private Label lblModell  	 			= new Label("Modell:");
     private Label lblSensortyp   			= new Label("Letzte Renovierung:");
     private Label lblFarben  				= new Label("Farben:");
-    private TextField txtName 	 			= new TextField();
-    private TextField txtPreis				= new TextField();
-    private TextField txtModell				= new TextField();
-    private TextField txtSensortyp			= new TextField();
-    private TextField txtFarben	 			= new TextField();
+    public TextField txtName 	 			= new TextField();
+    public TextField txtPreis				= new TextField();
+    public TextField txtModell				= new TextField();
+    public TextField txtSensortyp			= new TextField();
+    public TextField txtFarben	 			= new TextField();
     private TextArea txtAnzeige  			= new TextArea();
     private Button btnEingabe 		 		= new Button("Eingabe");
     private Button btnAnzeige 		 		= new Button("Anzeige");
@@ -40,20 +49,30 @@ public class HaushaltsroboterAnwendungssystem {
     private MenuItem mnItmCsvImport 		= new MenuItem("csv-Import");
     private MenuItem mnItmTxtImport 		= new MenuItem("txt-Import");
     private MenuItem mnItmCsvExport 		= new MenuItem("csv-Export");    
-    //-------Ende Attribute der grafischen Oberflaeche-------
+    //-------Ende Attribute der grafischen Oberflaeche-------	
     
-    // speichert temporaer ein Objekt vom Typ Haushaltsroboter
-    private Haushaltsroboter haushaltsroboter;
-    
-    public HaushaltsroboterAnwendungssystem(Stage primaryStage){
+//    public HaushaltsroboterView(Stage primaryStage){
+//    	Scene scene = new Scene(this.pane, 700, 340);
+//    	primaryStage.setScene(scene);
+//    	primaryStage.setTitle("Verwaltung von Haushaltsrobotern");
+//    	primaryStage.show();
+//    	this.initKomponenten();
+//		this.initListener();
+//    }
+    public HaushaltsroboterView(HaushaltsroboterControl hausControl,
+    		Stage primaryStage, HaushaltsroboterModel hausModel){
+    	this.hausControl = hausControl;
+    	this.hausModel = hausModel;
     	Scene scene = new Scene(this.pane, 700, 340);
     	primaryStage.setScene(scene);
     	primaryStage.setTitle("Verwaltung von Haushaltsrobotern");
     	primaryStage.show();
+    	
+ 		this.hausModel.addObserver(this);
+ 		
     	this.initKomponenten();
 		this.initListener();
     }
-    
     private void initKomponenten(){
        	// Labels
     	lblEingabe.setLayoutX(20);
@@ -127,7 +146,7 @@ public class HaushaltsroboterAnwendungssystem {
 	    btnEingabe.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent e) {
-        	    nehmeHaushaltsroboterAuf();
+        	    hausControl.nehmeHaushaltsroboterAuf();
             }
 	    });
 	    btnAnzeige.setOnAction(new EventHandler<ActionEvent>() {
@@ -139,104 +158,64 @@ public class HaushaltsroboterAnwendungssystem {
 	    mnItmCsvImport.setOnAction(new EventHandler<ActionEvent>() {
 	    	@Override
 	        public void handle(ActionEvent e) {
-	       	 	leseAusDatei("csv");
+
+					hausControl.leseAusDatei("csv");
+
 	    	}
-	    });
+	    }) ;
 	    mnItmTxtImport.setOnAction(new EventHandler<ActionEvent>() {
 		    @Override
 		    public void handle(ActionEvent e) {
-		     	leseAusDatei("txt");
+
+					hausControl.leseAusDatei("txt");
+
 		    }
     	});
 	    mnItmCsvExport.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent e) {
-				schreibeHaushaltsroboterInCsvDatei();
+
+					hausControl.schreibeHaushaltsroboterInCsvDatei();
+
 			}	
 	    });
     }
-    
-    private void nehmeHaushaltsroboterAuf(){
-    	try{ 
-    		this.haushaltsroboter = new Haushaltsroboter(
-    			txtName.getText(), 
-    			Float.parseFloat(txtPreis.getText()),
-   	            txtModell.getText(),
-   	        	txtSensortyp.getText(),
-    		    txtFarben.getText().split(";"));
-    		zeigeInformationsfensterAn("Der Haushaltsroboter wurde aufgenommen!");
-       	}
-       	catch(Exception exc){
-       		zeigeFehlermeldungsfensterAn(exc.getMessage());
-     	}
-    }
    
-    private void zeigeHaushaltsroboterAn(){
-    	if(this.haushaltsroboter != null){
-    		txtAnzeige.setText(
-    			this.haushaltsroboter.gibHaushaltsroboterZurueck(' '));
-    	}
-    	else{
-    		zeigeInformationsfensterAn("Bisher wurde kein Haushaltsroboter aufgenommen!");
-    	}
-    }    
-		  
-    private void leseAusDatei(String typ){
-    	try {
-      		if("csv".equals(typ)){
-      			BufferedReader ein = new BufferedReader(new FileReader("Haushaltsroboter.csv"));
-      			String[] zeile = ein.readLine().split(";");
-      			this.haushaltsroboter = new Haushaltsroboter(zeile[0], 
-      				Float.parseFloat(zeile[1]), 
-      				zeile[2], 
-      				zeile[3], 
-      				zeile[4].split("_"));
-      				ein.close();
-      	  			zeigeInformationsfensterAn(
-      	  	   			"Der Haushaltsroboter wurde gelesen!");
-      		}
-       		else{
-	   			zeigeInformationsfensterAn(
-	   				"Noch nicht implementiert!");
-	   		}
-		}
-		catch(IOException exc){
-			zeigeFehlermeldungsfensterAn(
-				"IOException beim Lesen!");
-		}
-		catch(Exception exc){
-			zeigeFehlermeldungsfensterAn(
-				"Unbekannter Fehler beim Lesen!");
-		}
+   public void zeigeInformationsfensterAn(String meldung){
+   	new MeldungsfensterAnzeiger(AlertType.INFORMATION,
+   		"Information", meldung).zeigeMeldungsfensterAn();
+   }	
+   
+   public void zeigeFehlermeldungsfensterAn(String meldung){
+      	new MeldungsfensterAnzeiger(AlertType.ERROR,
+       	"Fehler", meldung).zeigeMeldungsfensterAn();
+   }
+   
+   public void zeigeHaushaltsroboterAn(){
+   	if(this.hausModel.haushaltsroboter != null){
+   		txtAnzeige.setText(
+   			this.hausModel.haushaltsroboter.gibHaushaltsroboterZurueck(' '));
+   	}
+   	else{
+   		zeigeInformationsfensterAn("Bisher wurde kein Haushaltsroboter aufgenommen!");
+   	}
+   	}
+	public void nehmeHaushaltsroboterAuf(){
+		this.hausModel.haushaltsroboter = new Haushaltsroboter(
+    	txtName.getText(), 
+    	Float.parseFloat(txtPreis.getText()),
+   	    txtModell.getText(),
+   	    txtSensortyp.getText(),
+    	txtFarben.getText().split(";"));
+    	zeigeInformationsfensterAn("Der Haushaltsroboter wurde aufgenommen!");
+    	this.hausModel.notifyObservers();
+    	
+   }
+	@Override
+	public void update() {
+		if(this.hausModel.haushaltsroboter != null){
+	   		txtAnzeige.setText(
+	   			this.hausModel.haushaltsroboter.gibHaushaltsroboterZurueck(' '));
+	   	}
 	}
-		
-	private void schreibeHaushaltsroboterInCsvDatei() {
-		try {
-			BufferedWriter aus 
-				= new BufferedWriter(new FileWriter("HaushaltsroboterAusgabe.csv", true));
-			aus.write(haushaltsroboter.gibHaushaltsroboterZurueck(';'));
-			aus.close();
-   			zeigeInformationsfensterAn(
-	   			"Die Haushaltsroboter wurden gespeichert!");
-		}	
-		catch(IOException exc){
-			zeigeFehlermeldungsfensterAn(
-				"IOException beim Speichern!");
-		}
-		catch(Exception exc){
-			zeigeFehlermeldungsfensterAn(
-				"Unbekannter Fehler beim Speichern!");
-		}
-	}
-
-    private void zeigeInformationsfensterAn(String meldung){
-    	new MeldungsfensterAnzeiger(AlertType.INFORMATION,
-    		"Information", meldung).zeigeMeldungsfensterAn();
-    }	
-    
-    void zeigeFehlermeldungsfensterAn(String meldung){
-       	new MeldungsfensterAnzeiger(AlertType.ERROR,
-        	"Fehler", meldung).zeigeMeldungsfensterAn();
-    }
-
 }
